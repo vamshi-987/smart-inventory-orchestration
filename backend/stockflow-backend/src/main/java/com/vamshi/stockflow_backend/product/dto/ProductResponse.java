@@ -26,5 +26,5 @@ public class ProductResponse {
 
     private BigDecimal price;
 
-    private boolean active;
+    private boolean deleted;
 }

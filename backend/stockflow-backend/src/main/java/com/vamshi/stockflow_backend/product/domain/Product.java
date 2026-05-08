@@ -1,5 +1,6 @@
 package com.vamshi.stockflow_backend.product.domain;
 
+import com.vamshi.stockflow_backend.category.domain.Category;
 import com.vamshi.stockflow_backend.common.domain.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;

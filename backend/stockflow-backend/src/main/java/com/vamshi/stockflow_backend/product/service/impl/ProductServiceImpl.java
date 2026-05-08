@@ -1,12 +1,12 @@
 package com.vamshi.stockflow_backend.product.service.impl;
 
-import com.vamshi.stockflow_backend.product.domain.Category;
+import com.vamshi.stockflow_backend.category.domain.Category;
+import com.vamshi.stockflow_backend.category.repository.CategoryRepository;
 import com.vamshi.stockflow_backend.product.domain.Product;
 import com.vamshi.stockflow_backend.product.dto.ProductCreateRequest;
 import com.vamshi.stockflow_backend.product.dto.ProductResponse;
 import com.vamshi.stockflow_backend.product.dto.ProductUpdateRequest;
 import com.vamshi.stockflow_backend.product.mapper.ProductMapper;
-import com.vamshi.stockflow_backend.product.repository.CategoryRepository;
 import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;

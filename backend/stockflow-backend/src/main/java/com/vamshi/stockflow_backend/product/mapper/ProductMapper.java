@@ -1,6 +1,6 @@
 package com.vamshi.stockflow_backend.product.mapper;
 
-import com.vamshi.stockflow_backend.product.domain.Category;
+import com.vamshi.stockflow_backend.category.domain.Category;
 import com.vamshi.stockflow_backend.product.domain.Product;
 import com.vamshi.stockflow_backend.product.dto.ProductCreateRequest;
 import com.vamshi.stockflow_backend.product.dto.ProductResponse;
