@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -21,7 +22,7 @@ public class ProductCreateRequest {
     private String description;
 
     @NotNull
-    private Long categoryId;
+    private UUID categoryId;
 
     @NotNull
     @DecimalMin("0.0")

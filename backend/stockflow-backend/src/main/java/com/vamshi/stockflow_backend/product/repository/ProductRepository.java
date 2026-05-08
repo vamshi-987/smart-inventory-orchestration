@@ -22,7 +22,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
 
     Page<Product> findByNameContainingIgnoreCaseAndCategoryIdAndDeletedFalse(
             String name,
-            Long categoryId,
+            UUID categoryId,
             Pageable pageable
     );
 
@@ -32,7 +32,7 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
     );
 
     Page<Product> findByCategoryIdAndDeletedFalse(
-            Long categoryId,
+            UUID categoryId,
             Pageable pageable
     );
 }
