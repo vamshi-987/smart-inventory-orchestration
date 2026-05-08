@@ -31,5 +31,4 @@ public class Product extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal price;
 
-    private boolean isDeleted = false;
 }
