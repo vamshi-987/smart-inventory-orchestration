@@ -1,5 +1,6 @@
 package com.vamshi.stockflow_backend.warehouse.controller;
 
+import com.vamshi.stockflow_backend.warehouse.dto.NearestWarehouseResponse;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseCreateRequest;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseResponse;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseUpdateRequest;
@@ -50,5 +51,13 @@ public class WarehouseController {
     public ResponseEntity<Void> deleteWarehouse(@PathVariable UUID id) {
         warehouseService.deleteWarehouse(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/nearest")
+    public ResponseEntity<List<NearestWarehouseResponse>> findNearestWarehouses(
+            @RequestParam Double lat,
+            @RequestParam Double lng
+    ) {
+        return ResponseEntity.ok(warehouseService.findNearestWarehouses(lat, lng));
     }
 }

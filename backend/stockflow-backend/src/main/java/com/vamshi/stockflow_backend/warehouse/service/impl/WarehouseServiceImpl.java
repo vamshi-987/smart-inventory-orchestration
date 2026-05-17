@@ -1,6 +1,8 @@
 package com.vamshi.stockflow_backend.warehouse.service.impl;
 
+import com.vamshi.stockflow_backend.common.util.LocationUtils;
 import com.vamshi.stockflow_backend.warehouse.domain.Warehouse;
+import com.vamshi.stockflow_backend.warehouse.dto.NearestWarehouseResponse;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseCreateRequest;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseResponse;
 import com.vamshi.stockflow_backend.warehouse.dto.WarehouseUpdateRequest;
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.UUID;
 
@@ -67,5 +70,36 @@ public class WarehouseServiceImpl implements WarehouseService {
 
         warehouse.setActive(false);
         warehouseRepository.save(warehouse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<NearestWarehouseResponse> findNearestWarehouses(Double lat, Double lng) {
+        return warehouseRepository.findByActiveTrue()
+                .stream()
+                .filter(warehouse -> warehouse.getLatitude() != null && warehouse.getLongitude() != null)
+                .map(warehouse -> {
+                    double distanceKm = LocationUtils.calculateDistanceKm(
+                            lat,
+                            lng,
+                            warehouse.getLatitude(),
+                            warehouse.getLongitude()
+                    );
+
+                    return NearestWarehouseResponse.builder()
+                            .id(warehouse.getId())
+                            .name(warehouse.getName())
+                            .city(warehouse.getCity())
+                            .pincode(warehouse.getPincode())
+                            .address(warehouse.getAddress())
+                            .latitude(warehouse.getLatitude())
+                            .longitude(warehouse.getLongitude())
+                            .serviceRadiusKm(warehouse.getServiceRadiusKm())
+                            .distanceKm(distanceKm)
+                            .build();
+                })
+                .filter(response -> response.getDistanceKm() <= response.getServiceRadiusKm())
+                .sorted(Comparator.comparing(NearestWarehouseResponse::getDistanceKm))
+                .toList();
     }
 }
