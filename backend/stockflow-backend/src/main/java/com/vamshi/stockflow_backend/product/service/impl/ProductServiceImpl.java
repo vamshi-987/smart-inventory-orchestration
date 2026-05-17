@@ -97,7 +97,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     private Category getCategory(UUID id) {
-        return categoryRepository.findById(id)
+        return categoryRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
     }
 }

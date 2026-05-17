@@ -1,7 +1,9 @@
 package com.vamshi.stockflow_backend.product.dto;
 
+import jdk.jfr.Name;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
@@ -10,6 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
+@NoArgsConstructor
 public class ProductResponse {
 
     private UUID id;
