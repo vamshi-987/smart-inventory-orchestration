@@ -8,6 +8,7 @@ import com.vamshi.stockflow_backend.inventory.dto.ReduceStockRequest;
 import com.vamshi.stockflow_backend.inventory.mapper.InventoryMapper;
 import com.vamshi.stockflow_backend.inventory.repository.InventoryRepository;
 import com.vamshi.stockflow_backend.inventory.service.InventoryService;
+import com.vamshi.stockflow_backend.notification.service.NotificationService;
 import com.vamshi.stockflow_backend.product.domain.Product;
 import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.warehouse.domain.Warehouse;
@@ -29,6 +30,7 @@ public class InventoryServiceImpl implements InventoryService {
     private final WarehouseRepository warehouseRepository;
     private final ProductRepository productRepository;
     private final InventoryMapper inventoryMapper;
+    private final NotificationService notificationService;
 
     @Override
     public InventoryResponse createInventory(InventoryCreateRequest request) {
@@ -56,6 +58,8 @@ public class InventoryServiceImpl implements InventoryService {
                 .build();
 
         Inventory savedInventory = inventoryRepository.save(inventory);
+
+        checkAndNotifyLowStock(inventory);
 
         return inventoryMapper.toResponse(savedInventory);
     }
@@ -91,6 +95,8 @@ public class InventoryServiceImpl implements InventoryService {
 
         inventory.setAvailableQuantity(inventory.getAvailableQuantity() - request.getQuantity());
 
+        checkAndNotifyLowStock(inventory);
+
         Inventory updatedInventory = inventoryRepository.save(inventory);
 
         return inventoryMapper.toResponse(updatedInventory);
@@ -125,6 +131,19 @@ public class InventoryServiceImpl implements InventoryService {
 
         if (request.getLowStockThreshold() == null || request.getLowStockThreshold() <= 0) {
             throw new IllegalArgumentException("Low stock threshold must be positive");
+        }
+    }
+
+    private void checkAndNotifyLowStock(Inventory inventory) {
+        if (inventory.getAvailableQuantity() <= inventory.getLowStockThreshold()) {
+            String message = "Low stock for product "
+                    + inventory.getProduct().getName()
+                    + " in warehouse "
+                    + inventory.getWarehouse().getName()
+                    + ". Available quantity: "
+                    + inventory.getAvailableQuantity();
+
+            notificationService.createLowStockNotification(message);
         }
     }
 }
