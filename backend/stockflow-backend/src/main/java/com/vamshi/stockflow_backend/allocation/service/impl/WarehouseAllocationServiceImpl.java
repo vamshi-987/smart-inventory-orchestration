@@ -1,6 +1,7 @@
 package com.vamshi.stockflow_backend.allocation.service.impl;
 
 import com.vamshi.stockflow_backend.allocation.service.WarehouseAllocationService;
+import com.vamshi.stockflow_backend.common.util.LocationUtils;
 import com.vamshi.stockflow_backend.inventory.domain.Inventory;
 import com.vamshi.stockflow_backend.inventory.repository.InventoryRepository;
 import com.vamshi.stockflow_backend.order.dto.OrderItemRequest;
@@ -26,6 +27,7 @@ public class WarehouseAllocationServiceImpl implements WarehouseAllocationServic
     public Warehouse allocateWarehouse(PlaceOrderRequest request) {
         return findByPincodeWithStock(request)
                 .or(() -> findByCityWithStock(request))
+                .or(() -> findNearestWithStockWithinRadius(request))
                 .orElseThrow(() -> new RuntimeException("No warehouse available for this location"));
     }
 
@@ -94,5 +96,35 @@ public class WarehouseAllocationServiceImpl implements WarehouseAllocationServic
         }
 
         return totalStock;
+    }
+
+    private Optional<Warehouse> findNearestWithStockWithinRadius(PlaceOrderRequest request) {
+        if (request.getDeliveryLatitude() == null || request.getDeliveryLongitude() == null) {
+            return Optional.empty();
+        }
+
+        List<Warehouse> activeWarehouses = warehouseRepository.findByActiveTrue();
+
+        return activeWarehouses.stream()
+                .filter(warehouse -> warehouse.getLatitude() != null && warehouse.getLongitude() != null)
+                .filter(warehouse -> hasEnoughStockForAllItems(warehouse, request))
+                .filter(warehouse -> {
+                    double distance = LocationUtils.calculateDistanceKm(
+                            request.getDeliveryLatitude(),
+                            request.getDeliveryLongitude(),
+                            warehouse.getLatitude(),
+                            warehouse.getLongitude()
+                    );
+
+                    return distance <= warehouse.getServiceRadiusKm();
+                })
+                .min(Comparator.comparingDouble(warehouse ->
+                        LocationUtils.calculateDistanceKm(
+                                request.getDeliveryLatitude(),
+                                request.getDeliveryLongitude(),
+                                warehouse.getLatitude(),
+                                warehouse.getLongitude()
+                        )
+                ));
     }
 }
