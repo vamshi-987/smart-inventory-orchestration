@@ -6,6 +6,7 @@ import com.vamshi.stockflow_backend.inventory.domain.Inventory;
 import com.vamshi.stockflow_backend.inventory.repository.InventoryRepository;
 import com.vamshi.stockflow_backend.order.dto.OrderItemRequest;
 import com.vamshi.stockflow_backend.order.dto.PlaceOrderRequest;
+import com.vamshi.stockflow_backend.order.exception.OutOfServiceAreaException;
 import com.vamshi.stockflow_backend.warehouse.domain.Warehouse;
 import com.vamshi.stockflow_backend.warehouse.repository.WarehouseRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,10 +26,25 @@ public class WarehouseAllocationServiceImpl implements WarehouseAllocationServic
 
     @Override
     public Warehouse allocateWarehouse(PlaceOrderRequest request) {
-        return findByPincodeWithStock(request)
-                .or(() -> findByCityWithStock(request))
-                .or(() -> findNearestWithStockWithinRadius(request))
-                .orElseThrow(() -> new RuntimeException("No warehouse available for this location"));
+        Optional<Warehouse> pincodeWarehouse = findByPincodeWithStock(request);
+
+        if (pincodeWarehouse.isPresent()) {
+            return pincodeWarehouse.get();
+        }
+
+        Optional<Warehouse> cityWarehouse = findByCityWithStock(request);
+
+        if (cityWarehouse.isPresent()) {
+            return cityWarehouse.get();
+        }
+
+        Optional<Warehouse> nearestWarehouse = findNearestWithStockWithinRadius(request);
+
+        if (nearestWarehouse.isPresent()) {
+            return nearestWarehouse.get();
+        }
+
+        throw new OutOfServiceAreaException("No warehouse available for this location");
     }
 
     private Optional<Warehouse> findByPincodeWithStock(PlaceOrderRequest request) {
