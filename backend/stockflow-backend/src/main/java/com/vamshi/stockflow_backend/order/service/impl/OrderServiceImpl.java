@@ -4,6 +4,8 @@ import com.vamshi.stockflow_backend.allocation.service.WarehouseAllocationServic
 import com.vamshi.stockflow_backend.inventory.domain.Inventory;
 import com.vamshi.stockflow_backend.inventory.exception.StockConflictException;
 import com.vamshi.stockflow_backend.inventory.repository.InventoryRepository;
+import com.vamshi.stockflow_backend.notification.domain.NotificationType;
+import com.vamshi.stockflow_backend.notification.service.NotificationService;
 import com.vamshi.stockflow_backend.order.domain.Order;
 import com.vamshi.stockflow_backend.order.domain.OrderItem;
 import com.vamshi.stockflow_backend.order.domain.OrderStatus;
@@ -37,6 +39,7 @@ public class OrderServiceImpl implements OrderService {
     private final InventoryRepository inventoryRepository;
     private final WarehouseAllocationService warehouseAllocationService;
     private final OrderMapper orderMapper;
+    private final NotificationService notificationService;
 
     @Override
     public OrderResponse placeOrder(PlaceOrderRequest request) {
@@ -93,22 +96,26 @@ public class OrderServiceImpl implements OrderService {
                         .build();
 
                 order.getItems().add(orderItem);
-
                 totalAmount = totalAmount.add(lineTotal);
             }
 
             order.setTotalAmount(totalAmount);
             order.setStatus(OrderStatus.CONFIRMED);
 
-            try {
-                Order savedOrder = orderRepository.save(order);
+            Order savedOrder = orderRepository.save(order);
 
-                return orderMapper.toResponse(savedOrder);
-            }catch (ObjectOptimisticLockingFailureException e){
-                throw new StockConflictException("Stock was updated by another order. Please retry.");
-            }
-        } catch (RuntimeException e) {
-            throw new RuntimeException(e);
+            notificationService.createNotification(
+                    NotificationType.ORDER_PLACED,
+                    "Order placed successfully for customer: "
+                            + savedOrder.getCustomerName()
+                            + ", order id: "
+                            + savedOrder.getId()
+            );
+
+            return orderMapper.toResponse(savedOrder);
+
+        } catch (ObjectOptimisticLockingFailureException e) {
+            throw new StockConflictException("Stock was updated by another order. Please retry.");
         }
     }
 
@@ -147,6 +154,11 @@ public class OrderServiceImpl implements OrderService {
         order.setStatus(OrderStatus.CANCELLED);
 
         Order savedOrder = orderRepository.save(order);
+
+        notificationService.createNotification(
+                NotificationType.ORDER_CANCELLED,
+                "Order cancelled successfully. Order id: " + savedOrder.getId()
+        );
 
         return orderMapper.toResponse(savedOrder);
     }
