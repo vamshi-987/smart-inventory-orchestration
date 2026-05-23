@@ -3,6 +3,7 @@ package com.vamshi.stockflow_backend.notification.service.impl;
 import com.vamshi.stockflow_backend.notification.domain.Notification;
 import com.vamshi.stockflow_backend.notification.domain.NotificationType;
 import com.vamshi.stockflow_backend.notification.dto.NotificationResponse;
+import com.vamshi.stockflow_backend.notification.repository.NotificationRepository;
 import com.vamshi.stockflow_backend.notification.service.NotificationService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
