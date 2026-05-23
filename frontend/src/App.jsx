@@ -5,6 +5,7 @@ import Warehouses from "./pages/Warehouses";
 import Inventory from "./pages/Inventory";
 import Orders from "./pages/Orders";
 import Notifications from "./pages/Notifications";
+import AppLayout from "./components/AppLayout";
 
 function App() {
   return (

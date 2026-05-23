@@ -10,28 +10,34 @@ export default function Dashboard() {
     notifications: 0,
   });
 
-  const fetchStats = async () => {
-    const [productsRes, warehousesRes, ordersRes, notificationsRes] =
-      await Promise.all([
-        api.get("/products"),
-        api.get("/warehouses"),
-        api.get("/orders"),
-        api.get("/notifications"),
-      ]);
-
-    setStats({
-      products: productsRes.data.length,
-      warehouses: warehousesRes.data.length,
-      orders: ordersRes.data.length,
-      outOfServiceOrders: ordersRes.data.filter(
-        (order) => order.status === "OUT_OF_SERVICE_AREA"
-      ).length,
-      notifications: notificationsRes.data.length,
-    });
-  };
-
   useEffect(() => {
-    fetchStats();
+    let mounted = true;
+    const load = async () => {
+      const [productsRes, warehousesRes, ordersRes, notificationsRes] =
+        await Promise.all([
+          api.get("/products"),
+          api.get("/warehouses"),
+          api.get("/orders"),
+          api.get("/notifications"),
+        ]);
+
+      if (!mounted) return;
+
+      setStats({
+        products: productsRes.data.length,
+        warehouses: warehousesRes.data.length,
+        orders: ordersRes.data.length,
+        outOfServiceOrders: ordersRes.data.filter(
+          (order) => order.status === "OUT_OF_SERVICE_AREA"
+        ).length,
+        notifications: notificationsRes.data.length,
+      });
+    };
+
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (

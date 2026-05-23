@@ -10,7 +10,16 @@ export default function Notifications() {
   };
 
   useEffect(() => {
-    fetchNotifications();
+    let mounted = true;
+    const load = async () => {
+      const res = await api.get("/notifications");
+      if (!mounted) return;
+      setNotifications(res.data);
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const markAsRead = async (id) => {

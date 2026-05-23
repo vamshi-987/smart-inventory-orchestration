@@ -20,7 +20,16 @@ export default function Warehouses() {
   };
 
   useEffect(() => {
-    fetchWarehouses();
+    let mounted = true;
+    const load = async () => {
+      const res = await api.get("/warehouses");
+      if (!mounted) return;
+      setWarehouses(res.data);
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const handleChange = (e) => {

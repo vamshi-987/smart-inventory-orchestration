@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
 
 export default function Products() {
@@ -14,14 +14,22 @@ export default function Products() {
   });
 
   const fetchProducts = async () => {
-  const res = await api.get("/products");
-  setProducts(res.data);
-};
+    const res = await api.get("/products");
+    setProducts(res.data);
+  };
 
-useEffect(() => {
-  fetchProducts();
-  // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-}, []);
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      const res = await api.get("/products");
+      if (!mounted) return;
+      setProducts(res.data);
+    };
+    load();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const handleChange = (e) => {
     setForm((prev) => ({
