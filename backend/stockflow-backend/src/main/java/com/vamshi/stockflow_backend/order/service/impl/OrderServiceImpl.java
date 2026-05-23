@@ -2,6 +2,7 @@ package com.vamshi.stockflow_backend.order.service.impl;
 
 import com.vamshi.stockflow_backend.allocation.service.WarehouseAllocationService;
 import com.vamshi.stockflow_backend.inventory.domain.Inventory;
+import com.vamshi.stockflow_backend.inventory.exception.StockConflictException;
 import com.vamshi.stockflow_backend.inventory.repository.InventoryRepository;
 import com.vamshi.stockflow_backend.order.domain.Order;
 import com.vamshi.stockflow_backend.order.domain.OrderItem;
@@ -17,6 +18,7 @@ import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.warehouse.domain.Warehouse;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,9 +97,13 @@ public class OrderServiceImpl implements OrderService {
             order.setTotalAmount(totalAmount);
             order.setStatus(OrderStatus.CONFIRMED);
 
-            Order savedOrder = orderRepository.save(order);
+            try {
+                Order savedOrder = orderRepository.save(order);
 
-            return orderMapper.toResponse(savedOrder);
+                return orderMapper.toResponse(savedOrder);
+            }catch (ObjectOptimisticLockingFailureException e){
+                throw new StockConflictException("Stock was updated by another order. Please retry.");
+            }
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
