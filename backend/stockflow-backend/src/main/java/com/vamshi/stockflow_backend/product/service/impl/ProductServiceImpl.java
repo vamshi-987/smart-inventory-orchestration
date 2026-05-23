@@ -10,6 +10,8 @@ import com.vamshi.stockflow_backend.product.mapper.ProductMapper;
 import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.product.service.ProductService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,6 +42,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", key = "#id")
     @Transactional
     public ProductResponse updateProduct(UUID id, ProductUpdateRequest request) {
         Product product = getProduct(id);
@@ -51,6 +54,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Cacheable(value = "products", key = "#id")
     @Transactional(readOnly = true)
     public ProductResponse getProductById(UUID id) {
         Product product = getProduct(id);
