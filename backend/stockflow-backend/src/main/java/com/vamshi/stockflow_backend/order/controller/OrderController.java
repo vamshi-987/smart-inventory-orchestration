@@ -9,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 @RestController
 @RequestMapping("/api/orders")
 @RequiredArgsConstructor
@@ -22,5 +24,10 @@ public class OrderController {
     ) {
         OrderResponse response = orderService.placeOrder(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PutMapping("/{id}/cancel")
+    public ResponseEntity<OrderResponse> cancelOrder(@PathVariable UUID id) {
+        return ResponseEntity.ok(orderService.cancelOrder(id));
     }
 }

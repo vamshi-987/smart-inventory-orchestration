@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -107,5 +108,44 @@ public class OrderServiceImpl implements OrderService {
         } catch (RuntimeException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse cancelOrder(UUID orderId) {
+        Order order = orderRepository.findById(orderId)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + orderId));
+
+        if (order.getStatus() == OrderStatus.CANCELLED) {
+            throw new IllegalArgumentException("Order is already cancelled");
+        }
+
+        if (order.getStatus() == OrderStatus.FAILED ||
+                order.getStatus() == OrderStatus.OUT_OF_SERVICE_AREA) {
+            throw new IllegalArgumentException("This order cannot be cancelled");
+        }
+
+        Warehouse warehouse = order.getAllocatedWarehouse();
+
+        for (OrderItem item : order.getItems()) {
+            Inventory inventory = inventoryRepository
+                    .findByWarehouseIdAndProductId(
+                            warehouse.getId(),
+                            item.getProduct().getId()
+                    )
+                    .orElseThrow(() -> new EntityNotFoundException("Inventory not found"));
+
+            inventory.setAvailableQuantity(
+                    inventory.getAvailableQuantity() + item.getQuantity()
+            );
+
+            inventoryRepository.save(inventory);
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+
+        Order savedOrder = orderRepository.save(order);
+
+        return orderMapper.toResponse(savedOrder);
     }
 }
