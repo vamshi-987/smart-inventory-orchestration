@@ -10,6 +10,7 @@ import com.vamshi.stockflow_backend.order.domain.OrderStatus;
 import com.vamshi.stockflow_backend.order.dto.OrderItemRequest;
 import com.vamshi.stockflow_backend.order.dto.OrderResponse;
 import com.vamshi.stockflow_backend.order.dto.PlaceOrderRequest;
+import com.vamshi.stockflow_backend.order.dto.UpdateOrderStatusRequest;
 import com.vamshi.stockflow_backend.order.mapper.OrderMapper;
 import com.vamshi.stockflow_backend.order.repository.OrderRepository;
 import com.vamshi.stockflow_backend.order.service.OrderService;
@@ -23,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -143,6 +145,37 @@ public class OrderServiceImpl implements OrderService {
         }
 
         order.setStatus(OrderStatus.CANCELLED);
+
+        Order savedOrder = orderRepository.save(order);
+
+        return orderMapper.toResponse(savedOrder);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OrderResponse> getAllOrders() {
+        return orderRepository.findAll()
+                .stream()
+                .map(orderMapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderById(UUID id) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + id));
+
+        return orderMapper.toResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse updateOrderStatus(UUID id, UpdateOrderStatusRequest request) {
+        Order order = orderRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Order not found with id: " + id));
+
+        order.setStatus(request.getStatus());
 
         Order savedOrder = orderRepository.save(order);
 
