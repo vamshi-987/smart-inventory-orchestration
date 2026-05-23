@@ -35,67 +35,71 @@ public class OrderServiceImpl implements OrderService {
 
     @Override
     public OrderResponse placeOrder(PlaceOrderRequest request) {
-        Warehouse allocatedWarehouse = warehouseAllocationService.allocateWarehouse(request);
+        try {
+            Warehouse allocatedWarehouse = warehouseAllocationService.allocateWarehouse(request);
 
-        Order order = Order.builder()
-                .customerName(request.getCustomerName())
-                .deliveryCity(request.getDeliveryCity())
-                .deliveryPincode(request.getDeliveryPincode())
-                .deliveryLatitude(request.getDeliveryLatitude())
-                .deliveryLongitude(request.getDeliveryLongitude())
-                .allocatedWarehouse(allocatedWarehouse)
-                .status(OrderStatus.ALLOCATED)
-                .totalAmount(BigDecimal.ZERO)
-                .build();
-
-        BigDecimal totalAmount = BigDecimal.ZERO;
-
-        for (OrderItemRequest itemRequest : request.getItems()) {
-            Product product = productRepository.findById(itemRequest.getProductId())
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Product not found with id: " + itemRequest.getProductId()
-                    ));
-
-            Inventory inventory = inventoryRepository
-                    .findByWarehouseIdAndProductId(
-                            allocatedWarehouse.getId(),
-                            product.getId()
-                    )
-                    .orElseThrow(() -> new EntityNotFoundException(
-                            "Inventory not found for product in allocated warehouse"
-                    ));
-
-            if (inventory.getAvailableQuantity() < itemRequest.getQuantity()) {
-                throw new IllegalArgumentException("Insufficient stock for product: " + product.getName());
-            }
-
-            inventory.setAvailableQuantity(
-                    inventory.getAvailableQuantity() - itemRequest.getQuantity()
-            );
-
-            inventoryRepository.save(inventory);
-
-            BigDecimal lineTotal = product.getPrice()
-                    .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
-
-            OrderItem orderItem = OrderItem.builder()
-                    .order(order)
-                    .product(product)
-                    .quantity(itemRequest.getQuantity())
-                    .priceAtOrderTime(product.getPrice())
-                    .lineTotal(lineTotal)
+            Order order = Order.builder()
+                    .customerName(request.getCustomerName())
+                    .deliveryCity(request.getDeliveryCity())
+                    .deliveryPincode(request.getDeliveryPincode())
+                    .deliveryLatitude(request.getDeliveryLatitude())
+                    .deliveryLongitude(request.getDeliveryLongitude())
+                    .allocatedWarehouse(allocatedWarehouse)
+                    .status(OrderStatus.ALLOCATED)
+                    .totalAmount(BigDecimal.ZERO)
                     .build();
 
-            order.getItems().add(orderItem);
+            BigDecimal totalAmount = BigDecimal.ZERO;
 
-            totalAmount = totalAmount.add(lineTotal);
+            for (OrderItemRequest itemRequest : request.getItems()) {
+                Product product = productRepository.findById(itemRequest.getProductId())
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Product not found with id: " + itemRequest.getProductId()
+                        ));
+
+                Inventory inventory = inventoryRepository
+                        .findByWarehouseIdAndProductId(
+                                allocatedWarehouse.getId(),
+                                product.getId()
+                        )
+                        .orElseThrow(() -> new EntityNotFoundException(
+                                "Inventory not found for product in allocated warehouse"
+                        ));
+
+                if (inventory.getAvailableQuantity() < itemRequest.getQuantity()) {
+                    throw new IllegalArgumentException("Insufficient stock for product: " + product.getName());
+                }
+
+                inventory.setAvailableQuantity(
+                        inventory.getAvailableQuantity() - itemRequest.getQuantity()
+                );
+
+                inventoryRepository.save(inventory);
+
+                BigDecimal lineTotal = product.getPrice()
+                        .multiply(BigDecimal.valueOf(itemRequest.getQuantity()));
+
+                OrderItem orderItem = OrderItem.builder()
+                        .order(order)
+                        .product(product)
+                        .quantity(itemRequest.getQuantity())
+                        .priceAtOrderTime(product.getPrice())
+                        .lineTotal(lineTotal)
+                        .build();
+
+                order.getItems().add(orderItem);
+
+                totalAmount = totalAmount.add(lineTotal);
+            }
+
+            order.setTotalAmount(totalAmount);
+            order.setStatus(OrderStatus.CONFIRMED);
+
+            Order savedOrder = orderRepository.save(order);
+
+            return orderMapper.toResponse(savedOrder);
+        } catch (RuntimeException e) {
+            throw new RuntimeException(e);
         }
-
-        order.setTotalAmount(totalAmount);
-        order.setStatus(OrderStatus.CONFIRMED);
-
-        Order savedOrder = orderRepository.save(order);
-
-        return orderMapper.toResponse(savedOrder);
     }
 }
