@@ -1,55 +1,76 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
+import LocationPicker from "../components/LocationPicker";
 
 export default function Orders() {
-  const [form, setForm] = useState({
-    customerName: "",
-    deliveryCity: "",
-    deliveryPincode: "",
-    deliveryLatitude: "",
-    deliveryLongitude: "",
-    productId: "",
-    quantity: "",
-  });
+  const [customerName, setCustomerName] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
-  const [response, setResponse] = useState(null);
+  const [products, setProducts] = useState([]);
+  const [productId, setProductId] = useState("");
+  const [quantity, setQuantity] = useState(1);
+  const [cartItems, setCartItems] = useState([]);
 
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
+  const [orderResponse, setOrderResponse] = useState(null);
+
+  const fetchProducts = async () => {
+    const res = await api.get("/products");
+    setProducts(res.data);
   };
 
-  const useMyLocation = () => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      setForm((prev) => ({
-        ...prev,
-        deliveryLatitude: position.coords.latitude,
-        deliveryLongitude: position.coords.longitude,
-      }));
-    });
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const addItemToCart = () => {
+    if (!productId || quantity <= 0) {
+      alert("Select product and quantity");
+      return;
+    }
+
+    const product = products.find((p) => p.id === productId);
+
+    setCartItems((prev) => [
+      ...prev,
+      {
+        productId,
+        productName: product?.name,
+        quantity: Number(quantity),
+      },
+    ]);
+
+    setProductId("");
+    setQuantity(1);
   };
 
   const placeOrder = async (e) => {
     e.preventDefault();
 
-    const payload = {
-      customerName: form.customerName,
-      deliveryCity: form.deliveryCity,
-      deliveryPincode: form.deliveryPincode,
-      deliveryLatitude: Number(form.deliveryLatitude),
-      deliveryLongitude: Number(form.deliveryLongitude),
-      items: [
-        {
-          productId: form.productId,
-          quantity: Number(form.quantity),
-        },
-      ],
+    if (!selectedLocation) {
+      alert("Please select delivery location");
+      return;
+    }
+
+    if (cartItems.length === 0) {
+      alert("Please add at least one product");
+      return;
+    }
+
+    const requestBody = {
+      customerName,
+      deliveryLocation: selectedLocation,
+      items: cartItems.map((item) => ({
+        productId: item.productId,
+        quantity: item.quantity,
+      })),
     };
 
-    const res = await api.post("/orders", payload);
-    setResponse(res.data);
+    const res = await api.post("/orders", requestBody);
+
+    setOrderResponse(res.data);
+    setCustomerName("");
+    setSelectedLocation(null);
+    setCartItems([]);
   };
 
   return (
@@ -57,27 +78,64 @@ export default function Orders() {
       <h1>Place Order</h1>
 
       <form onSubmit={placeOrder}>
-        <input name="customerName" placeholder="Customer name" value={form.customerName} onChange={handleChange} />
-        <input name="deliveryCity" placeholder="Delivery city" value={form.deliveryCity} onChange={handleChange} />
-        <input name="deliveryPincode" placeholder="Delivery pincode" value={form.deliveryPincode} onChange={handleChange} />
-        <input name="deliveryLatitude" placeholder="Latitude" value={form.deliveryLatitude} onChange={handleChange} />
-        <input name="deliveryLongitude" placeholder="Longitude" value={form.deliveryLongitude} onChange={handleChange} />
-        <input name="productId" placeholder="Product UUID" value={form.productId} onChange={handleChange} />
-        <input name="quantity" placeholder="Quantity" value={form.quantity} onChange={handleChange} />
+        <label>Customer Name</label>
+        <input
+          value={customerName}
+          placeholder="Customer name"
+          onChange={(e) => setCustomerName(e.target.value)}
+        />
 
-        <button type="button" onClick={useMyLocation}>
-          Use My Location
+        <LocationPicker onLocationConfirm={setSelectedLocation} />
+
+        {selectedLocation && (
+          <div className="selected-location">
+            <h4>Confirmed Delivery Location</h4>
+            <p>{selectedLocation.formattedAddress}</p>
+            <p>City: {selectedLocation.city}</p>
+            <p>Pincode: {selectedLocation.pincode}</p>
+          </div>
+        )}
+
+        <h3>Add Products</h3>
+
+        <select value={productId} onChange={(e) => setProductId(e.target.value)}>
+          <option value="">Select product</option>
+          {products.map((product) => (
+            <option key={product.id} value={product.id}>
+              {product.name} - {product.sku}
+            </option>
+          ))}
+        </select>
+
+        <input
+          type="number"
+          min="1"
+          value={quantity}
+          onChange={(e) => setQuantity(e.target.value)}
+        />
+
+        <button type="button" onClick={addItemToCart}>
+          Add Item
         </button>
+
+        <h3>Cart</h3>
+
+        {cartItems.map((item, index) => (
+          <p key={index}>
+            {item.productName} - Qty: {item.quantity}
+          </p>
+        ))}
 
         <button type="submit">Place Order</button>
       </form>
 
-      {response && (
-        <div>
+      {orderResponse && (
+        <div className="card">
           <h3>Order Created</h3>
-          <p>Status: {response.status}</p>
-          <p>Total: {response.totalAmount}</p>
-          <p>Warehouse: {response.allocatedWarehouseName}</p>
+          <p>Status: {orderResponse.status}</p>
+          <p>Total: ₹{orderResponse.totalAmount}</p>
+          <p>Warehouse: {orderResponse.allocatedWarehouseName}</p>
+          <p>Delivery: {orderResponse.deliveryAddress}</p>
         </div>
       )}
     </div>
