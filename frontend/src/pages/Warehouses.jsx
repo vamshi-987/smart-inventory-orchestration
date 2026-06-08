@@ -1,18 +1,12 @@
 import { useEffect, useState } from "react";
 import api from "../api/axiosConfig";
+import LocationPicker from "../components/LocationPicker";
 
 export default function Warehouses() {
   const [warehouses, setWarehouses] = useState([]);
-
-  const [form, setForm] = useState({
-    name: "",
-    city: "",
-    pincode: "",
-    address: "",
-    latitude: "",
-    longitude: "",
-    serviceRadiusKm: "",
-  });
+  const [name, setName] = useState("");
+  const [serviceRadiusKm, setServiceRadiusKm] = useState("");
+  const [selectedLocation, setSelectedLocation] = useState(null);
 
   const fetchWarehouses = async () => {
     const res = await api.get("/warehouses");
@@ -20,45 +14,30 @@ export default function Warehouses() {
   };
 
   useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      const res = await api.get("/warehouses");
-      if (!mounted) return;
-      setWarehouses(res.data);
-    };
-    load();
-    return () => {
-      mounted = false;
-    };
+    fetchWarehouses();
   }, []);
-
-  const handleChange = (e) => {
-    setForm({
-      ...form,
-      [e.target.name]: e.target.value,
-    });
-  };
 
   const createWarehouse = async (e) => {
     e.preventDefault();
 
+    if (!selectedLocation) {
+      alert("Please select warehouse location");
+      return;
+    }
+
     await api.post("/warehouses", {
-      ...form,
-      latitude: form.latitude ? Number(form.latitude) : null,
-      longitude: form.longitude ? Number(form.longitude) : null,
-      serviceRadiusKm: Number(form.serviceRadiusKm),
+      name,
+      city: selectedLocation.city,
+      pincode: selectedLocation.pincode,
+      address: selectedLocation.formattedAddress,
+      latitude: selectedLocation.latitude,
+      longitude: selectedLocation.longitude,
+      serviceRadiusKm: Number(serviceRadiusKm),
     });
 
-    setForm({
-      name: "",
-      city: "",
-      pincode: "",
-      address: "",
-      latitude: "",
-      longitude: "",
-      serviceRadiusKm: "",
-    });
-
+    setName("");
+    setServiceRadiusKm("");
+    setSelectedLocation(null);
     fetchWarehouses();
   };
 
@@ -67,13 +46,31 @@ export default function Warehouses() {
       <h1>Warehouses</h1>
 
       <form onSubmit={createWarehouse}>
-        <input name="name" placeholder="Name" value={form.name} onChange={handleChange} />
-        <input name="city" placeholder="City" value={form.city} onChange={handleChange} />
-        <input name="pincode" placeholder="Pincode" value={form.pincode} onChange={handleChange} />
-        <input name="address" placeholder="Address" value={form.address} onChange={handleChange} />
-        <input name="latitude" placeholder="Latitude" value={form.latitude} onChange={handleChange} />
-        <input name="longitude" placeholder="Longitude" value={form.longitude} onChange={handleChange} />
-        <input name="serviceRadiusKm" placeholder="Service Radius KM" value={form.serviceRadiusKm} onChange={handleChange} />
+        <label>Warehouse Name</label>
+        <input
+          value={name}
+          placeholder="Warehouse name"
+          onChange={(e) => setName(e.target.value)}
+        />
+
+        <LocationPicker onLocationConfirm={setSelectedLocation} />
+
+        {selectedLocation && (
+          <div className="selected-location">
+            <h4>Confirmed Warehouse Location</h4>
+            <p>{selectedLocation.formattedAddress}</p>
+            <p>City: {selectedLocation.city}</p>
+            <p>Pincode: {selectedLocation.pincode}</p>
+          </div>
+        )}
+
+        <label>Service Radius KM</label>
+        <input
+          type="number"
+          value={serviceRadiusKm}
+          placeholder="Example: 10"
+          onChange={(e) => setServiceRadiusKm(e.target.value)}
+        />
 
         <small>Example service radius: 10 km</small>
 
@@ -86,8 +83,7 @@ export default function Warehouses() {
             <th>Name</th>
             <th>City</th>
             <th>Pincode</th>
-            <th>Lat</th>
-            <th>Lng</th>
+            <th>Address</th>
             <th>Radius</th>
           </tr>
         </thead>
@@ -98,8 +94,7 @@ export default function Warehouses() {
               <td>{warehouse.name}</td>
               <td>{warehouse.city}</td>
               <td>{warehouse.pincode}</td>
-              <td>{warehouse.latitude}</td>
-              <td>{warehouse.longitude}</td>
+              <td>{warehouse.address}</td>
               <td>{warehouse.serviceRadiusKm} km</td>
             </tr>
           ))}
