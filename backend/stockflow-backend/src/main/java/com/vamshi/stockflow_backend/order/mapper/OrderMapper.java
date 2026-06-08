@@ -41,6 +41,9 @@ public class OrderMapper {
                 .status(order.getStatus())
                 .totalAmount(order.getTotalAmount())
                 .items(itemResponses)
+                .deliveryAddress(order.getDeliveryAddress())
+                .deliveryLatitude(order.getDeliveryLatitude())
+                .deliveryLongitude(order.getDeliveryLongitude())
                 .build();
     }
 }

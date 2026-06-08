@@ -55,6 +55,7 @@ public class OrderServiceImpl implements OrderService {
                     .allocatedWarehouse(allocatedWarehouse)
                     .status(OrderStatus.ALLOCATED)
                     .totalAmount(BigDecimal.ZERO)
+                    .deliveryAddress(request.getDeliveryLocation().getFormattedAddress())
                     .build();
 
             BigDecimal totalAmount = BigDecimal.ZERO;

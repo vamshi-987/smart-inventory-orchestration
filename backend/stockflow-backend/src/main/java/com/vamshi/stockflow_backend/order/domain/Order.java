@@ -49,4 +49,7 @@ public class Order extends BaseEntity {
     )
     @Builder.Default
     private List<OrderItem> items = new ArrayList<>();
+
+    @Column(nullable = false, columnDefinition = "TEXT")
+    private String deliveryAddress;
 }

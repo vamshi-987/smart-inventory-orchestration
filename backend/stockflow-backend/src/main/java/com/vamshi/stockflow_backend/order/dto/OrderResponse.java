@@ -31,4 +31,10 @@ public class OrderResponse {
     private BigDecimal totalAmount;
 
     private List<OrderItemResponse> items;
+
+    private String deliveryAddress;
+
+    private Double deliveryLatitude;
+
+    private Double deliveryLongitude;
 }
