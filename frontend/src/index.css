@@ -42,3 +42,52 @@ body {
 .page {
   padding: 24px;
 }
+
+.location-picker {
+  margin: 16px 0;
+}
+
+.location-search-row {
+  display: flex;
+  gap: 8px;
+}
+
+.location-search-row input {
+  flex: 1;
+}
+
+.suggestions {
+  margin: 10px 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.suggestions button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px;
+  border: none;
+  background: white;
+  cursor: pointer;
+}
+
+.suggestions button:hover {
+  background: #f3f4f6;
+}
+
+.map-box {
+  margin-top: 12px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #ddd;
+}
+
+.selected-location {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f9fafb;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}

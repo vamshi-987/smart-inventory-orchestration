@@ -13,9 +13,15 @@ export default function Products() {
     price: "",
   });
 
+  const normalizeProducts = (data) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.content)) return data.content;
+    return [];
+  };
+
   const fetchProducts = async () => {
     const res = await api.get("/products");
-    setProducts(res.data);
+    setProducts(normalizeProducts(res.data));
   };
 
   useEffect(() => {
@@ -23,9 +29,11 @@ export default function Products() {
     const load = async () => {
       const res = await api.get("/products");
       if (!mounted) return;
-      setProducts(res.data);
+      setProducts(normalizeProducts(res.data));
     };
+
     load();
+
     return () => {
       mounted = false;
     };
