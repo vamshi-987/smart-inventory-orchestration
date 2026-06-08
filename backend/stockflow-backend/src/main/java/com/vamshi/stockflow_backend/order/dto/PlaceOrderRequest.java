@@ -26,6 +26,10 @@ public class PlaceOrderRequest {
     @Valid
     private List<OrderItemRequest> items;
 
+    public String getDeliveryAddress() {
+        return deliveryLocation != null ? deliveryLocation.getFormattedAddress() : null;
+    }
+
     public String getDeliveryCity() {
         return deliveryLocation != null ? deliveryLocation.getCity() : null;
     }
@@ -41,4 +45,6 @@ public class PlaceOrderRequest {
     public Double getDeliveryLongitude() {
         return deliveryLocation != null ? deliveryLocation.getLongitude() : null;
     }
+
+
 }

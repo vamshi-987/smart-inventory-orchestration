@@ -12,10 +12,37 @@ export default function Orders() {
   const [cartItems, setCartItems] = useState([]);
 
   const [orderResponse, setOrderResponse] = useState(null);
+  const [loadingProducts, setLoadingProducts] = useState(false);
+  const [error, setError] = useState("");
+
+  const extractArray = (data) => {
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    if (Array.isArray(data?.content)) {
+      return data.content;
+    }
+
+    return [];
+  };
 
   const fetchProducts = async () => {
-    const res = await api.get("/products");
-    setProducts(res.data);
+    try {
+      setLoadingProducts(true);
+      setError("");
+
+      const res = await api.get("/products");
+
+      const productList = extractArray(res.data);
+      setProducts(productList);
+    } catch (err) {
+      console.error("Failed to fetch products:", err);
+      setProducts([]);
+      setError("Failed to load products. Check backend or API URL.");
+    } finally {
+      setLoadingProducts(false);
+    }
   };
 
   useEffect(() => {
@@ -23,18 +50,24 @@ export default function Orders() {
   }, []);
 
   const addItemToCart = () => {
-    if (!productId || quantity <= 0) {
+    if (!productId || Number(quantity) <= 0) {
       alert("Select product and quantity");
       return;
     }
 
-    const product = products.find((p) => p.id === productId);
+    const product = products.find((p) => String(p.id) === String(productId));
+
+    if (!product) {
+      alert("Selected product not found");
+      return;
+    }
 
     setCartItems((prev) => [
       ...prev,
       {
-        productId,
-        productName: product?.name,
+        productId: product.id,
+        productName: product.name,
+        sku: product.sku,
         quantity: Number(quantity),
       },
     ]);
@@ -43,8 +76,17 @@ export default function Orders() {
     setQuantity(1);
   };
 
+  const removeItemFromCart = (indexToRemove) => {
+    setCartItems((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
   const placeOrder = async (e) => {
     e.preventDefault();
+
+    if (!customerName.trim()) {
+      alert("Please enter customer name");
+      return;
+    }
 
     if (!selectedLocation) {
       alert("Please select delivery location");
@@ -56,26 +98,54 @@ export default function Orders() {
       return;
     }
 
-    const requestBody = {
-      customerName,
-      deliveryLocation: selectedLocation,
-      items: cartItems.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
-    };
+    try {
+      setError("");
 
-    const res = await api.post("/orders", requestBody);
+      const requestBody = {
+        customerName: customerName,
 
-    setOrderResponse(res.data);
-    setCustomerName("");
-    setSelectedLocation(null);
-    setCartItems([]);
+        deliveryAddress: selectedLocation.formattedAddress,
+        deliveryCity: selectedLocation.city,
+        deliveryPincode: selectedLocation.pincode,
+        deliveryLatitude: selectedLocation.latitude,
+        deliveryLongitude: selectedLocation.longitude,
+
+        items: cartItems.map((item) => ({
+          productId: item.productId,
+          quantity: item.quantity,
+        })),
+      };
+
+      const res = await api.post("/orders", requestBody);
+
+      setOrderResponse(res.data);
+      setCustomerName("");
+      setSelectedLocation(null);
+      setCartItems([]);
+      setProductId("");
+      setQuantity(1);
+    } catch (err) {
+      console.error("Failed to place order:", err);
+
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to place order. Check backend logs.";
+
+      setError(message);
+      alert(message);
+    }
   };
 
   return (
     <div>
       <h1>Place Order</h1>
+
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+        </div>
+      )}
 
       <form onSubmit={placeOrder}>
         <label>Customer Name</label>
@@ -98,14 +168,22 @@ export default function Orders() {
 
         <h3>Add Products</h3>
 
-        <select value={productId} onChange={(e) => setProductId(e.target.value)}>
-          <option value="">Select product</option>
-          {products.map((product) => (
-            <option key={product.id} value={product.id}>
-              {product.name} - {product.sku}
-            </option>
-          ))}
-        </select>
+        {loadingProducts ? (
+          <p>Loading products...</p>
+        ) : (
+          <select
+            value={productId}
+            onChange={(e) => setProductId(e.target.value)}
+          >
+            <option value="">Select product</option>
+
+            {products.map((product) => (
+              <option key={product.id} value={product.id}>
+                {product.name} - {product.sku}
+              </option>
+            ))}
+          </select>
+        )}
 
         <input
           type="number"
@@ -120,11 +198,21 @@ export default function Orders() {
 
         <h3>Cart</h3>
 
-        {cartItems.map((item, index) => (
-          <p key={index}>
-            {item.productName} - Qty: {item.quantity}
-          </p>
-        ))}
+        {cartItems.length === 0 ? (
+          <p>No items added</p>
+        ) : (
+          cartItems.map((item, index) => (
+            <div key={`${item.productId}-${index}`}>
+              <p>
+                {item.productName} - {item.sku} - Qty: {item.quantity}
+              </p>
+
+              <button type="button" onClick={() => removeItemFromCart(index)}>
+                Remove
+              </button>
+            </div>
+          ))
+        )}
 
         <button type="submit">Place Order</button>
       </form>

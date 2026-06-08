@@ -48,6 +48,7 @@ public class OrderServiceImpl implements OrderService {
 
             Order order = Order.builder()
                     .customerName(request.getCustomerName())
+                    .deliveryAddress(request.getDeliveryAddress())
                     .deliveryCity(request.getDeliveryCity())
                     .deliveryPincode(request.getDeliveryPincode())
                     .deliveryLatitude(request.getDeliveryLatitude())
@@ -55,7 +56,6 @@ public class OrderServiceImpl implements OrderService {
                     .allocatedWarehouse(allocatedWarehouse)
                     .status(OrderStatus.ALLOCATED)
                     .totalAmount(BigDecimal.ZERO)
-                    .deliveryAddress(request.getDeliveryLocation().getFormattedAddress())
                     .build();
 
             BigDecimal totalAmount = BigDecimal.ZERO;

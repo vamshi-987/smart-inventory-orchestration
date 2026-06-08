@@ -8,9 +8,37 @@ export default function Warehouses() {
   const [serviceRadiusKm, setServiceRadiusKm] = useState("");
   const [selectedLocation, setSelectedLocation] = useState(null);
 
+  const [loadingWarehouses, setLoadingWarehouses] = useState(false);
+  const [error, setError] = useState("");
+
+  const extractArray = (data) => {
+    if (Array.isArray(data)) {
+      return data;
+    }
+
+    if (Array.isArray(data?.content)) {
+      return data.content;
+    }
+
+    return [];
+  };
+
   const fetchWarehouses = async () => {
-    const res = await api.get("/warehouses");
-    setWarehouses(res.data);
+    try {
+      setLoadingWarehouses(true);
+      setError("");
+
+      const res = await api.get("/warehouses");
+
+      const warehouseList = extractArray(res.data);
+      setWarehouses(warehouseList);
+    } catch (err) {
+      console.error("Failed to fetch warehouses:", err);
+      setWarehouses([]);
+      setError("Failed to load warehouses. Check backend or API URL.");
+    } finally {
+      setLoadingWarehouses(false);
+    }
   };
 
   useEffect(() => {
@@ -20,30 +48,61 @@ export default function Warehouses() {
   const createWarehouse = async (e) => {
     e.preventDefault();
 
+    if (!name.trim()) {
+      alert("Please enter warehouse name");
+      return;
+    }
+
     if (!selectedLocation) {
       alert("Please select warehouse location");
       return;
     }
 
-    await api.post("/warehouses", {
-      name,
-      city: selectedLocation.city,
-      pincode: selectedLocation.pincode,
-      address: selectedLocation.formattedAddress,
-      latitude: selectedLocation.latitude,
-      longitude: selectedLocation.longitude,
-      serviceRadiusKm: Number(serviceRadiusKm),
-    });
+    if (!serviceRadiusKm || Number(serviceRadiusKm) <= 0) {
+      alert("Please enter valid service radius");
+      return;
+    }
 
-    setName("");
-    setServiceRadiusKm("");
-    setSelectedLocation(null);
-    fetchWarehouses();
+    try {
+      setError("");
+
+      await api.post("/warehouses", {
+        name: name,
+        city: selectedLocation.city,
+        pincode: selectedLocation.pincode,
+        address: selectedLocation.formattedAddress,
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        serviceRadiusKm: Number(serviceRadiusKm),
+      });
+
+      setName("");
+      setServiceRadiusKm("");
+      setSelectedLocation(null);
+
+      fetchWarehouses();
+    } catch (err) {
+      console.error("Failed to create warehouse:", err);
+
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to create warehouse. Check backend logs.";
+
+      setError(message);
+      alert(message);
+    }
   };
 
   return (
     <div>
       <h1>Warehouses</h1>
+
+      {error && (
+        <div className="error-message">
+          <p>{error}</p>
+        </div>
+      )}
 
       <form onSubmit={createWarehouse}>
         <label>Warehouse Name</label>
@@ -77,29 +136,37 @@ export default function Warehouses() {
         <button type="submit">Create Warehouse</button>
       </form>
 
-      <table>
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>City</th>
-            <th>Pincode</th>
-            <th>Address</th>
-            <th>Radius</th>
-          </tr>
-        </thead>
+      <h3>Warehouse List</h3>
 
-        <tbody>
-          {warehouses.map((warehouse) => (
-            <tr key={warehouse.id}>
-              <td>{warehouse.name}</td>
-              <td>{warehouse.city}</td>
-              <td>{warehouse.pincode}</td>
-              <td>{warehouse.address}</td>
-              <td>{warehouse.serviceRadiusKm} km</td>
+      {loadingWarehouses ? (
+        <p>Loading warehouses...</p>
+      ) : warehouses.length === 0 ? (
+        <p>No warehouses found</p>
+      ) : (
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>City</th>
+              <th>Pincode</th>
+              <th>Address</th>
+              <th>Radius</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {warehouses.map((warehouse) => (
+              <tr key={warehouse.id}>
+                <td>{warehouse.name}</td>
+                <td>{warehouse.city}</td>
+                <td>{warehouse.pincode}</td>
+                <td>{warehouse.address}</td>
+                <td>{warehouse.serviceRadiusKm} km</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
     </div>
   );
 }
