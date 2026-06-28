@@ -24,6 +24,4 @@ public class ProductUpdateRequest {
     @NotNull
     @DecimalMin("0.0")
     private BigDecimal price;
-
-    private boolean isDeleted;
 }

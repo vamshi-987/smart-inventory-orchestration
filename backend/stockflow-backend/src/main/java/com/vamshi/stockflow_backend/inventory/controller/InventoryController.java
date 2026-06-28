@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class InventoryController {
     private final InventoryService inventoryService;
 
     @PostMapping
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER')")
     public ResponseEntity<InventoryResponse> createInventory(
             @Valid @RequestBody InventoryCreateRequest request
     ) {
@@ -30,6 +32,7 @@ public class InventoryController {
     }
 
     @PutMapping("/{id}/add-stock")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF')")
     public ResponseEntity<InventoryResponse> addStock(
             @PathVariable UUID id,
             @Valid @RequestBody AddStockRequest request
@@ -38,6 +41,7 @@ public class InventoryController {
     }
 
     @PutMapping("/{id}/reduce-stock")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF')")
     public ResponseEntity<InventoryResponse> reduceStock(
             @PathVariable UUID id,
             @Valid @RequestBody ReduceStockRequest request
@@ -46,6 +50,7 @@ public class InventoryController {
     }
 
     @GetMapping("/warehouse/{warehouseId}")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF')")
     public ResponseEntity<List<InventoryResponse>> getStockByWarehouse(
             @PathVariable UUID warehouseId
     ) {
@@ -53,6 +58,7 @@ public class InventoryController {
     }
 
     @GetMapping("/product/{productId}")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF')")
     public ResponseEntity<List<InventoryResponse>> getStockByProduct(
             @PathVariable UUID productId
     ) {

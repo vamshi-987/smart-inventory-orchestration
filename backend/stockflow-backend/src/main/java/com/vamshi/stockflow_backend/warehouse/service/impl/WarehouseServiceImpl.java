@@ -11,6 +11,7 @@ import com.vamshi.stockflow_backend.warehouse.repository.WarehouseRepository;
 import com.vamshi.stockflow_backend.warehouse.service.WarehouseService;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +55,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @CacheEvict(value = "warehouses", key = "#id")
     public WarehouseResponse updateWarehouse(UUID id, WarehouseUpdateRequest request) {
         Warehouse warehouse = warehouseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found with id: " + id));
@@ -66,6 +68,7 @@ public class WarehouseServiceImpl implements WarehouseService {
     }
 
     @Override
+    @CacheEvict(value = "warehouses", key = "#id")
     public void deleteWarehouse(UUID id) {
         Warehouse warehouse = warehouseRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Warehouse not found with id: " + id));

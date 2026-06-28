@@ -70,33 +70,26 @@ public class WarehouseAllocationServiceImpl implements WarehouseAllocationServic
         }
 
         return warehouses.stream()
-                .filter(warehouse -> hasEnoughStockForAllItems(warehouse, request))
-                .max(Comparator.comparingInt(warehouse -> calculateTotalAvailableStock(warehouse, request)));
+                // evaluateAvailableStock fetches each warehouse's inventory once and
+                // returns -1 when any item is short, avoiding a second pass over the DB.
+                .map(warehouse -> new WarehouseStock(
+                        warehouse,
+                        evaluateAvailableStock(warehouse, request)))
+                .filter(candidate -> candidate.totalStock() >= 0)
+                .max(Comparator.comparingInt(WarehouseStock::totalStock))
+                .map(WarehouseStock::warehouse);
     }
 
     private boolean hasEnoughStockForAllItems(Warehouse warehouse, PlaceOrderRequest request) {
-        for (OrderItemRequest item : request.getItems()) {
-            Optional<Inventory> inventoryOptional =
-                    inventoryRepository.findByWarehouseIdAndProductId(
-                            warehouse.getId(),
-                            item.getProductId()
-                    );
-
-            if (inventoryOptional.isEmpty()) {
-                return false;
-            }
-
-            Inventory inventory = inventoryOptional.get();
-
-            if (inventory.getAvailableQuantity() < item.getQuantity()) {
-                return false;
-            }
-        }
-
-        return true;
+        return evaluateAvailableStock(warehouse, request) >= 0;
     }
 
-    private int calculateTotalAvailableStock(Warehouse warehouse, PlaceOrderRequest request) {
+    /**
+     * Returns the total available stock across all requested items for the given
+     * warehouse, or -1 if any item is missing or has insufficient quantity.
+     * Each inventory row is fetched exactly once.
+     */
+    private int evaluateAvailableStock(Warehouse warehouse, PlaceOrderRequest request) {
         int totalStock = 0;
 
         for (OrderItemRequest item : request.getItems()) {
@@ -106,12 +99,23 @@ public class WarehouseAllocationServiceImpl implements WarehouseAllocationServic
                             item.getProductId()
                     );
 
-            totalStock += inventoryOptional
-                    .map(Inventory::getAvailableQuantity)
-                    .orElse(0);
+            if (inventoryOptional.isEmpty()) {
+                return -1;
+            }
+
+            Inventory inventory = inventoryOptional.get();
+
+            if (inventory.getAvailableQuantity() < item.getQuantity()) {
+                return -1;
+            }
+
+            totalStock += inventory.getAvailableQuantity();
         }
 
         return totalStock;
+    }
+
+    private record WarehouseStock(Warehouse warehouse, int totalStock) {
     }
 
     private Optional<Warehouse> findNearestWithStockWithinRadius(PlaceOrderRequest request) {

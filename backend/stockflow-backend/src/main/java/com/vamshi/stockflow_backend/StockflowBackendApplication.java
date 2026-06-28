@@ -9,7 +9,9 @@ import org.springframework.cache.annotation.EnableCaching;
 public class StockflowBackendApplication {
 
 	public static void main(String[] args) {
+
 		SpringApplication.run(StockflowBackendApplication.class, args);
+
 	}
 
 }

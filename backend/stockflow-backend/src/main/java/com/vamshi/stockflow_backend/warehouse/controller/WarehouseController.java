@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class WarehouseController {
     private final WarehouseService warehouseService;
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WarehouseResponse> createWarehouse(
             @Valid @RequestBody WarehouseCreateRequest request
     ) {
@@ -30,16 +32,19 @@ public class WarehouseController {
     }
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF','CUSTOMER')")
     public ResponseEntity<List<WarehouseResponse>> getAllWarehouses() {
         return ResponseEntity.ok(warehouseService.getAllWarehouses());
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF','CUSTOMER')")
     public ResponseEntity<WarehouseResponse> getWarehouseById(@PathVariable UUID id) {
         return ResponseEntity.ok(warehouseService.getWarehouseById(id));
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<WarehouseResponse> updateWarehouse(
             @PathVariable UUID id,
             @Valid @RequestBody WarehouseUpdateRequest request
@@ -48,12 +53,14 @@ public class WarehouseController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Void> deleteWarehouse(@PathVariable UUID id) {
         warehouseService.deleteWarehouse(id);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/nearest")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','WAREHOUSE_STAFF','CUSTOMER')")
     public ResponseEntity<List<NearestWarehouseResponse>> findNearestWarehouses(
             @RequestParam Double lat,
             @RequestParam Double lng

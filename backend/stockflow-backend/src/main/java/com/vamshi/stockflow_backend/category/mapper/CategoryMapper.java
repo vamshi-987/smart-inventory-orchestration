@@ -21,7 +21,6 @@ public class CategoryMapper {
 
     public void updateEntity(Category category, CategoryUpdateRequest request) {
         category.setName(request.getName());
-        category.setDeleted(request.isDeleted());
     }
 
     public CategoryResponse toResponse(Category category) {

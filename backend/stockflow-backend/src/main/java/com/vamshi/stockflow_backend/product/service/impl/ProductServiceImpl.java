@@ -9,6 +9,8 @@ import com.vamshi.stockflow_backend.product.dto.ProductUpdateRequest;
 import com.vamshi.stockflow_backend.product.mapper.ProductMapper;
 import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.product.service.ProductService;
+import com.vamshi.stockflow_backend.common.exception.ResourceAlreadyExistsException;
+import com.vamshi.stockflow_backend.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,7 +32,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductResponse createProduct(ProductCreateRequest request) {
         if (productRepository.existsBySku(request.getSku())) {
-            throw new RuntimeException("Product already exists with SKU: " + request.getSku());
+            throw new ResourceAlreadyExistsException("Product", request.getSku());
         }
 
         Category category = getCategory(request.getCategoryId());
@@ -50,7 +52,9 @@ public class ProductServiceImpl implements ProductService {
 
         productMapper.updateEntity(product, request, category);
 
-        return productMapper.toResponse(product);
+        Product savedProduct = productRepository.save(product);
+
+        return productMapper.toResponse(savedProduct);
     }
 
     @Override
@@ -89,19 +93,21 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", key = "#id")
     @Transactional
     public void deleteProduct(UUID id) {
         Product product = getProduct(id);
         product.setDeleted(true);
+        productRepository.save(product);
     }
 
     private Product getProduct(UUID id) {
-        return productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        return productRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Product", id.toString()));
     }
 
     private Category getCategory(UUID id) {
         return categoryRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id.toString()));
     }
 }

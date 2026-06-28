@@ -8,6 +8,7 @@ import com.vamshi.stockflow_backend.product.dto.ProductResponse;
 import com.vamshi.stockflow_backend.product.mapper.ProductMapper;
 import com.vamshi.stockflow_backend.product.repository.ProductRepository;
 import com.vamshi.stockflow_backend.product.service.impl.ProductServiceImpl;
+import com.vamshi.stockflow_backend.common.exception.ResourceAlreadyExistsException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -134,8 +135,8 @@ class ProductServiceImplTest {
 
         // Act + Assert
 
-        RuntimeException exception =
-                assertThrows(RuntimeException.class,
+        ResourceAlreadyExistsException exception =
+                assertThrows(ResourceAlreadyExistsException.class,
                         () -> productService.createProduct(request));
 
         assertTrue(exception.getMessage()

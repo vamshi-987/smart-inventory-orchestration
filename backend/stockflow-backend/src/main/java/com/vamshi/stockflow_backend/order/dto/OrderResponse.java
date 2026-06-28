@@ -1,6 +1,7 @@
 package com.vamshi.stockflow_backend.order.dto;
 
 import com.vamshi.stockflow_backend.order.domain.OrderStatus;
+import com.vamshi.stockflow_backend.order.domain.DeliveryStatus;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -27,6 +28,8 @@ public class OrderResponse {
     private String allocatedWarehouseName;
 
     private OrderStatus status;
+
+    private DeliveryStatus deliveryStatus;
 
     private BigDecimal totalAmount;
 

@@ -28,7 +28,6 @@ public class ProductMapper {
         product.setDescription(request.getDescription());
         product.setCategory(category);
         product.setPrice(request.getPrice());
-        product.setDeleted(request.isDeleted());
     }
 
     public ProductResponse toResponse(Product product) {

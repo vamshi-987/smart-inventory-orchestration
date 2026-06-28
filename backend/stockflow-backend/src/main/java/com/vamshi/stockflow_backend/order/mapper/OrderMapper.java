@@ -40,6 +40,7 @@ public class OrderMapper {
                                 : null
                 )
                 .status(order.getStatus())
+                .deliveryStatus(order.getDeliveryStatus())
                 .totalAmount(order.getTotalAmount())
                 .items(itemResponses)
                 .build();

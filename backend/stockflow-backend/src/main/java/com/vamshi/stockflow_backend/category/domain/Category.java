@@ -13,7 +13,10 @@ import lombok.*;
 @Table(name = "categories")
 public class Category extends BaseEntity {
 
-    @Column(nullable = false, unique = true)
+    // Uniqueness for active (non-deleted) categories is enforced at the service
+    // layer via existsByNameIgnoreCaseAndDeletedFalse. A DB-level unique constraint
+    // would reject re-creating a name that belongs to a soft-deleted category.
+    @Column(nullable = false)
     private String name;
 
 }

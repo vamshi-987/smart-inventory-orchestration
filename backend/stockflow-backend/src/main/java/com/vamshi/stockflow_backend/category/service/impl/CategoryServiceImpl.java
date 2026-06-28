@@ -7,6 +7,8 @@ import com.vamshi.stockflow_backend.category.dto.CategoryUpdateRequest;
 import com.vamshi.stockflow_backend.category.mapper.CategoryMapper;
 import com.vamshi.stockflow_backend.category.repository.CategoryRepository;
 import com.vamshi.stockflow_backend.category.service.CategoryService;
+import com.vamshi.stockflow_backend.common.exception.ResourceAlreadyExistsException;
+import com.vamshi.stockflow_backend.common.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,7 +28,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse createCategory(CategoryCreateRequest request) {
 
         if (categoryRepository.existsByNameIgnoreCaseAndDeletedFalse(request.getName())) {
-            throw new RuntimeException("Category already exists with name: " + request.getName());
+            throw new ResourceAlreadyExistsException("Category", request.getName());
         }
 
         Category category = categoryMapper.toEntity(request);
@@ -41,7 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse getCategoryById(UUID id) {
 
         Category category = categoryRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id.toString()));
 
         return categoryMapper.toResponse(category);
     }
@@ -60,7 +62,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(UUID id, CategoryUpdateRequest request) {
 
         Category category = categoryRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id.toString()));
 
         categoryMapper.updateEntity(category, request);
 
@@ -73,7 +75,7 @@ public class CategoryServiceImpl implements CategoryService {
     public void deleteCategory(UUID id) {
 
         Category category = categoryRepository.findByIdAndDeletedFalse(id)
-                .orElseThrow(() -> new RuntimeException("Category not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Category", id.toString()));
 
         category.setDeleted(true);
 

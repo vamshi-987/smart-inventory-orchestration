@@ -1,0 +1,14 @@
+package com.vamshi.stockflow_backend.common.exception;
+
+public enum ErrorCode {
+    EMAIL_ALREADY_EXISTS,
+    USERNAME_ALREADY_EXISTS,
+    RESOURCE_ALREADY_EXISTS,
+    RESOURCE_NOT_FOUND,
+    INVALID_CREDENTIALS,
+    VALIDATION_ERROR,
+    BAD_REQUEST,
+    STOCK_CONFLICT,
+    OUT_OF_SERVICE_AREA,
+    INTERNAL_SERVER_ERROR
+}

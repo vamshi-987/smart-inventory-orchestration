@@ -39,6 +39,10 @@ public class Order extends BaseEntity {
     @Column(nullable = false)
     private OrderStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private DeliveryStatus deliveryStatus;
+
     @Column(nullable = false)
     private BigDecimal totalAmount;
 
