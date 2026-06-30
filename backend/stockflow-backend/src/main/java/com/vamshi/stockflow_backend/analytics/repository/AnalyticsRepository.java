@@ -36,7 +36,7 @@ public interface AnalyticsRepository extends JpaRepository<Order, UUID> {
 
     @Query("""
             select new com.vamshi.stockflow_backend.analytics.dto.PeakHourResponse(
-                function('hour', o.createdAt),
+                cast(function('hour', o.createdAt) as integer),
                 count(o),
                 coalesce(sum(o.totalAmount), 0)
             )
@@ -44,8 +44,8 @@ public interface AnalyticsRepository extends JpaRepository<Order, UUID> {
             where (:warehouseId is null or o.allocatedWarehouse.id = :warehouseId)
               and (:fromCreatedAt is null or o.createdAt >= :fromCreatedAt)
               and (:toCreatedAt is null or o.createdAt <= :toCreatedAt)
-            group by function('hour', o.createdAt)
-            order by function('hour', o.createdAt)
+            group by cast(function('hour', o.createdAt) as integer)
+            order by cast(function('hour', o.createdAt) as integer)
             """)
     List<PeakHourResponse> getPeakHours(
             @Param("warehouseId") UUID warehouseId,
